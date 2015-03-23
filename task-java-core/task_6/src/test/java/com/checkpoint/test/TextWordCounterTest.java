@@ -19,7 +19,7 @@ public class TextWordCounterTest {
 	
 	@Before 
 	public void init() throws InterruptedException {	
-		this.results = TextWordCounter.getWordEntriesCounter("test/test.txt", 10);
+		this.results = TextWordCounter.getWordEntriesCounter("test/test.txt", 1000);
 	}
 	
 	@Test 

@@ -1,7 +1,9 @@
 package com.checkpoint;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.Scanner;
 
 public class NumberParser {
@@ -17,8 +19,8 @@ public class NumberParser {
 	
 	public static boolean validNumberFromFile(String filename) {
 		try {
-			Scanner scan = new Scanner(new File("filename"));
-			if(scan.nextLine().matches(pattern))
+			BufferedReader br = new BufferedReader(new FileReader(filename));
+			if(br.readLine().matches(pattern))
 				return true;
 			else 
 				return false;
