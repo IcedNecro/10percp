@@ -24,7 +24,6 @@ public class NumberParser {
 	 * @return true if line matches, false if not
 	 */
 	public static boolean validNumber(String number) {
-		System.out.println("lol");
 		if(number.matches(pattern))
 			return true;
 		else 
@@ -49,5 +48,13 @@ public class NumberParser {
 			e.printStackTrace();
 		}
 		return false;
+	}
+	
+	public static void main(String args[]) {
+		if (args.length==2){
+			System.out.println("Is number in file valid?:\t"+validNumberFromFile(args[1]));
+		} else {
+			System.out.println("Is number \""+args[0]+"\" valid?:\t"+validNumber(args[0]));
+		}
 	}
 }

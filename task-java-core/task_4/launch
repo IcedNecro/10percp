@@ -1,3 +1,17 @@
 #!/bin/bash
 
-mvn test 
+if [ "$1" == "-t" ]
+then
+	mvn test 
+elif [ "$1" == "-f" ]
+then
+	#launching programm for validating a phone number in the file 
+	echo "The contents of file:"
+	cat $2
+	echo "\n"
+
+	mvn -q exec:java -Dexec.mainClass="com.checkpoint.NumberParser" -Dexec.args="$1 $2"
+else 
+	#launching programm with phone number as argument
+	mvn -q exec:java -Dexec.mainClass="com.checkpoint.NumberParser" -Dexec.args="'$1'"
+fi
