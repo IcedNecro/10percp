@@ -124,4 +124,9 @@ public class TextWordCounter {
 			return this.t;
 		}		
 	}
+	
+	public static void main(String[] args) throws NumberFormatException, InterruptedException {
+		System.out.println("Count of entries of word \""+args[2]+"\" :"+TextWordCounter.getWordEntriesCounter(args[0], Integer.parseInt(args[1])).get(args[2]));
+		
+	}
 }

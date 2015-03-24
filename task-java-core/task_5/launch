@@ -4,7 +4,7 @@ if [ "$1" == "--test" ]
 	then
 	mvn test
 else
-	mvn exec:java -Dexec.mainClass="com.checkpoint.CodeCleaner" -Dexec.args="$1 $2" 
+	mvn -q exec:java -Dexec.mainClass="com.checkpoint.CodeCleaner" -Dexec.args="$1 $2" 
 	chmod a+w $2
 fi
 

@@ -34,4 +34,9 @@ public class NumberParserTest {
 			
 		}
 	}
+	
+	@Test 
+	public void testFromFile() {
+		assertEquals(true, validNumberFromFile("testfiles/test"));
+	}
 }
