@@ -1,100 +1,104 @@
 package com.checkpoint;
 
-import java.util.Stack;
+import java.util.ArrayList;
 
-public class MyOwnThreadPool {
-	private int n, nOfThreads;
-	private ManagerThread manager;
-	
-	public MyOwnThreadPool(int n,int nOfThreads) {
-		this.n=n;
-		this.nOfThreads = nOfThreads;
-		manager = new ManagerThread(n, nOfThreads);
+/**
+ * Computes sum of series using 'handmade' thread pool
+ * @author roman
+ *
+ */
+public class MyOwnThreadPool extends SeriesComputer {
+
+	public MyOwnThreadPool(String filename, Class<? extends SeriesMember> memberClass){
+		super(filename, memberClass);
 	}
-	
-	public int getAnswer() {
-		this.manager.start();
-		/*try {
-			this.manager.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}*/
 		
-		return 0;//this.manager.getResult();
+	public MyOwnThreadPool(int n,int nOfThreads,Class<? extends SeriesMember> classOfSeries) {
+		super(n, nOfThreads, classOfSeries);
 	}
-	
-	private class ManagerThread extends Thread {
-		private Stack<Thread> stack;
-			
-		private Integer result = 0;
+
+	@Override
+	public Double getResult() {
 		
-		public ManagerThread(int n, int nOfThreads) {
-			this.stack = new Stack<>();
-			for(int i=0; i<nOfThreads; i++) {
-				Thread t = new LocalThread();
-				this.stack.add(t);
+		int mod = this.n%this.nOfThreads;
+		// topBorder % nOfThreads == 0
+		int topBorder = this.n+(this.nOfThreads-mod);
+		
+		int membersPerThread = nOfThreads<=topBorder ? topBorder/this.nOfThreads: 1;
+		int i = 0;
+		
+		ArrayList<ComputingThread> threads = new ArrayList<ComputingThread>();
+		try {
+			// each thread computes sum of series from (i-membersPerThread)-th member inclusive and
+			// to i-th member exclusive. Each thread adds to list that will be executed in summary thread
+			for(i = membersPerThread+1; i<=topBorder+1; i+=membersPerThread){
+				ComputingThread t = new ComputingThread(i-membersPerThread, i, this.memberClass.newInstance());
+				threads.add(t);
 				t.start();
 			}
+			
+			// Starting thread that computes total result
+			ResultThread rThread = new ResultThread(threads);
+			rThread.start();
+			// wait before summary thread finish its computations
+			rThread.join();
+			return rThread.getResult();
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException();
+		}
+	}
+	
+	private class ComputingThread extends Thread {
+		private int first, last;
+		private Double result = 0.0d;
+		private SeriesMember member;
+		
+		public ComputingThread(int firstMember, int lastMember, SeriesMember member) throws InstantiationException, IllegalAccessException {
+			this.first = firstMember;
+			this.last = lastMember;
+			this.member = member;
 		}
 		
 		@Override 
 		public void run() {
-			int i=0;
-			while(i<MyOwnThreadPool.this.n) {
-			//	synchronized(stack) {
-					if(!stack.isEmpty()) {
-						LocalThread lt = (LocalThread) stack.remove(0);
-						synchronized (lt) {
-							lt.setData(i++, result);
-							lt.notify();							
-						}
-					}
-				//}
+			// computing sum of members from i=first while i<last exclusive and i is less than n 
+			for(int i = first; i<last && i<=MyOwnThreadPool.this.n; i++) {
+				result += this.member.computeMember(i);
 			}
+			
 		}
 		
-		public int getResult() {
+		public Double getResult() {
 			return this.result;
 		}
-		
-		private class LocalThread extends Thread {
-			private Integer total;
-			private int i;
-			
-			public LocalThread() {
-				this.total = total;
-			}
-			
-			public void setData(int i, Integer total) {
-				this.total = total;
-				this.i = i;
-			}
-			
-			@Override
-			public void run() {
-				while(true){
-					System.out.println("running");
-					synchronized (this) {
-						try {
-							System.out.println("waiting");
-							this.wait();
-							System.out.println("after");
-							
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						int buffer = i%2==0?1:-1;
-						this.total += (int) Math.pow(2, (i-buffer));
-						stack.add(this);
-					}
-				}
-			}
-		}
-
 	}
 	
-	public static void main(String[] args) {
-		MyOwnThreadPool tp = new MyOwnThreadPool(9,5);
-		tp.getAnswer();
+	private class ResultThread extends Thread {
+		private ArrayList<ComputingThread> threads;
+		private Double result=0.0d;
+		public ResultThread(ArrayList<ComputingThread> threads) {
+			this.threads = threads;
+		}
+		
+		@Override 
+		public void run() {
+			try {
+				// joins all threads before they finish their calculations
+				for(Thread t : this.threads)
+					t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			for(ComputingThread t : this.threads)
+				this.result += t.getResult();
+			
+		}
+		/**
+		 * returns result
+		 */
+		public Double getResult() {
+			return this.result;
+		}
 	}
 }

@@ -1,5 +1,11 @@
 package com.checkpoint;
 
+/**
+ * An implementation of SeriesMember abstract class.
+ * Member's formula: 2^(i-(-1)^i)
+ * @author roman
+ *
+ */
 public class SpecialSeries extends SeriesMember{
 	
 	@Override
