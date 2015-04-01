@@ -8,6 +8,12 @@ import java.util.logging.Logger;
 
 import com.checkpoint.mobilenetwork.core.packages.Package;
 
+/**
+ * Subscriber subscribes for network. It can make or receive calls and sms
+ * 
+ * @author roman
+ *
+ */
 public class Subscriber {
 	private int x=0,y=0;
 
@@ -16,22 +22,26 @@ public class Subscriber {
 	private Logger logger;
 	private Package pack;
 	private String phoneNumber;
-	private boolean free = true;
 	private PhoneCall phoneCall;
 	
+	private MobileNetwork operator;
 	private IncomingCall incoming; 
 	private NotificationListener notificationListener;
 
-	public Subscriber(String phoneNumber, Package pack, int x, int y) {
-		this(phoneNumber,pack);
-		this.x=0;
-		this.y=0;
+	public Subscriber(String phoneNumber, int x, int y) {
+		this(phoneNumber);
+		this.x=x;
+		this.y=y;
 	}
 
-	
 	public Subscriber(String phoneNumber, Package pack) {
+		this(phoneNumber);
+		this.operator = pack.getNetwork();
+	}
+		
+	
+	public Subscriber(String phoneNumber) {
 		this.phoneNumber = phoneNumber;
-		this.pack = pack;
 		this.logger = Logger.getLogger("Subscriber "+this.phoneNumber);
 		
 		this.incoming = new IncomingCall();
@@ -40,34 +50,64 @@ public class Subscriber {
 		this.notificationListener.start();
 	}
 	
-	public synchronized boolean isFree() {
-		return free;
-	}
-
-	public synchronized void setFree(boolean isFree) {
-		this.free = isFree;
-	}
-	
-	public void performCallTo(Subscriber subscriber, List<MobileTower> mobiTowers) {
+	/**
+	 * Sends call request to another subscriber to the nearest tower
+	 * @param subscriber
+	 * @param mobiTowers - list of towers
+	 */
+	public synchronized void performCallTo(Subscriber subscriber, Long duration, List<MobileTower> mobiTowers) {
+		// waits while current call will finish
+		if(this.phoneCall!=null)
+			try {
+				this.phoneCall.getCallThread().join();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+		//finds nearest tower
 		for(MobileTower tower : mobiTowers) {
-			if(tower.isInRange(this)) {
+			if(tower.isInRange(this) && tower.sharedNetworks().contains(subscriber.getOperator())) {
 				try {
-					CallResponse response = tower.sendRequest(new CallRequest(this, subscriber, this.pack));
-					this.incoming.setResponse(response);
+					tower.sendRequest(new CallRequest(this, subscriber, duration, this.pack));
 					return;
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
 			}
 		}
+		logger.log(Level.INFO, this.phoneNumber+" - You are offline, or the nearest mobile towers don't supports your consumer operator");
 	}
 	
+	/**
+	 * Sends the sms request to the nearest tower
+	 * @param consumer - consumer you want to send sms to
+	 * @param text - text of sms
+	 * @param mobiTowers - list of towers
+	 */
 	public void sendSMS(Subscriber consumer, String text,List<MobileTower> mobiTowers) {
 		for(MobileTower tower : mobiTowers) {
-			if(tower.isInRange(this)) {
+			if(tower.isInRange(this) && tower.sharedNetworks().contains(consumer.getOperator())) {
 				tower.sendNotification(new SMS(this, consumer, text));
+				return;
 			}
 		}
+	}
+	
+	/**
+	 * Perform money transfer to another subscriber
+	 * @param consumer - consumer you need to transfer money to
+	 * @param amount - amount of money to transfer
+	 * @param mobiTowers - list of towers
+	 */
+	public void transferMoneyTo(Subscriber consumer, float amount, List<MobileTower> mobiTowers) {
+		//finds nearest tower
+		for(MobileTower tower : mobiTowers) {
+			if(tower.isInRange(this)) {
+				tower.sendNotification(new TransferMoneyNotification(this, consumer, amount));
+				return;
+			}
+		}
+		logger.log(Level.INFO, this + " - Not in network");
+
 	}
 	
 	public void receiveNotification(Notification notification) {
@@ -78,7 +118,8 @@ public class Subscriber {
 		return this.phoneCall;
 	}
 
-	public void setPhoneCall(PhoneCall another) {
+	public synchronized void setPhoneCall(PhoneCall another) {
+
 		this.phoneCall = another;
 	}
 
@@ -87,13 +128,21 @@ public class Subscriber {
 		return moneyOnCount;
 	}
 
+	public void setPack(Package pack) {
+		this.pack = pack;
+	}
+	
 	public Package getPack() {
 		return this.pack;
 	}
-	
+
+	/**
+	 * charges money on count of subscriber according to package
+	 * @param moneyOnCount
+	 */
 	public void chargeMoneyOnCount(float moneyOnCount) {
 		this.moneyOnCount += moneyOnCount;
-		this.pack.charged(moneyOnCount);
+		this.pack.charged(this,moneyOnCount);
 	}
 
 	public int getMinutes() {
@@ -119,54 +168,73 @@ public class Subscriber {
 	public void setY(int y) {
 		this.y = y;
 	}
+	
+	public MobileNetwork getOperator() {
+		return operator;
+	}
 
+
+	public void setOperator(MobileNetwork operator) {
+		this.operator = operator;
+		this.operator.addSubscriber(this);
+	}
+
+
+	@Override
+	public boolean equals(Object o){
+		if(o instanceof Subscriber)
+			if(((Subscriber)o).phoneNumber.equals(this.phoneNumber))
+				return true;
+		return false; 
+	}
 	
 	@Override 
 	public String toString() {
 		return this.phoneNumber;
 	}
 	
-
+	
+	/**
+	 * Thread that listens for incoming and outgoing calls
+	 * 
+	 * @author roman
+	 */
 	private class IncomingCall extends Thread {
 		
-		private CallResponse response;
-		
-		public void setResponse(CallResponse callResponse) {
-			this.response = callResponse;
-		}
 		@Override
 		public void run() {
 			logger.log(Level.INFO, "Subscriber "+phoneNumber+" is ready to recieve incoming calls");
 			while(true) {
-				if(Subscriber.this.isFree()){
-					synchronized(Subscriber.this){
-						
-						if(Subscriber.this.phoneCall!=null) {
-				
-								logger.log(Level.INFO, phoneNumber + " Call " + Subscriber.this.phoneCall + " started");
-								try {
-									Thread t = Subscriber.this.phoneCall.getCallThread();
-									t.join();
-								} catch (InterruptedException e) {
-									e.printStackTrace();
-								}
-								logger.log(Level.INFO, phoneNumber + " Call " + Subscriber.this.phoneCall + " successfully finished");
-								Subscriber.this.phoneCall = null;
-							}
-							if(response!=null) {
-								logger.log(Level.INFO, this.response.getStatus().name());
-								this.response = null;
-							}
-						
+				synchronized (Subscriber.this) {
+					// if there is a call 
+					if(Subscriber.this.phoneCall!=null) {
+						logger.log(Level.INFO, phoneNumber + " Call " + Subscriber.this.phoneCall + " started");
+						try {
+							Thread t = Subscriber.this.phoneCall.getCallThread();
+							t.join();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
 						}
+						logger.log(Level.INFO, phoneNumber + " Call " + Subscriber.this.phoneCall + " successfully finished");
+						Subscriber.this.phoneCall = null;
+					}
 				}
 			}
 		}
 	}
 	
+	/**
+	 * Listens for notifications that comes from network
+	 * 
+	 * @author roman
+	 */
 	private class NotificationListener extends Thread {
 		private Stack<Notification> notifications = new Stack<Notification>();
 		
+		/**
+		 * Adds notification to notifications stack
+		 * @param notification
+		 */
 		public void addNotification(Notification notification){
 			this.notifications.add(notification);
 		}
@@ -175,6 +243,7 @@ public class Subscriber {
 		public void run() {
 			while(true) {
 				if(notifications.size()!=0) {
+					//if stack isn't empty
 					notifications.pop().perform();
 				}
 			}			

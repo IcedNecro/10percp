@@ -3,15 +3,20 @@ package com.checkpoint.mobilenetwork.core;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SystemNotification implements Notification{
+/**
+ * Represents any system notification that comes from Mobile Network
+ * @author roman
+ *
+ */
+public class SystemNotification extends Notification{
 	private MobileNetwork network;
-	private Subscriber consumer;
 	private String text;
 	private static Logger logger = Logger.getLogger("System Notification");
 	
 	public SystemNotification(MobileNetwork network, Subscriber subscriber, String text) {
+		super(null, subscriber);
+		
 		this.text = text;
-		this.consumer = subscriber;
 		this.network = network;
 	}
 	
