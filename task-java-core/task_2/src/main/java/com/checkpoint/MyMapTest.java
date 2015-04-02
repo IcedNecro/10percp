@@ -2,6 +2,9 @@ package com.checkpoint;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -48,8 +51,9 @@ public class MyMapTest {
 	}
 	
 	@Test
-	public void showEntries() {
-		System.out.println(this.entries);
+	public void keySet() {
+		for(int i=0; i<map.size(); i++)
+			assertEquals(true, map.keySet().contains("key"+i));
 	}
 
 	@Test
@@ -69,29 +73,23 @@ public class MyMapTest {
 		this.map.remove("key10");
 		
 		assertEquals(null, this.map.get("key10"));
-		System.out.println(this.map.entrySet()+" set");
 	}
 	
 	@Test
-	public void temporalRemovement() throws InterruptedException {
-	//	MyMap<String, Integer> map = new MyMap<String, Integer>();
+	public void temporalRemovement() throws InterruptedException {	
 		
-	//	MyMap map = mock(MyMap.class);
+		MyMap<Integer, String> map = new MyMap<Integer,String>();
+		Set<Integer> keys= new HashSet<Integer>();
 		
-		
-		for(int i = 0; i<2000; i++) {
-			map.put("key"+i, new Integer(i));
-			//System.out.println(map.keySet());
-			if(i%3==0) map.remove("key"+1);
-			if(i%4==0) map.size();
-			if(i%5==0) map.values();
-			if(i%6==0) map.entrySet();
+		for(int i=6; i<15;i++)
+			keys.add(new Integer(i));
+				
+		for(int i = 0; i<15; i++) {
+			map.put(new Integer(i), "key"+i);
 			
-			Thread.sleep(10);
-		}
-		
-		
-		System.out.println("key "+map.keySet());
-		
+			Thread.sleep(1000);
+		}		
+		Thread.sleep(200);
+		assertEquals(keys, map.keySet());
 	}
 }

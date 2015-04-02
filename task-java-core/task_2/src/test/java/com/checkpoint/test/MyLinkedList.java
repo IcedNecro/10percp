@@ -7,8 +7,26 @@ import java.util.ListIterator;
 
 public class MyLinkedList<E> implements List<E> {
 
+	private long MAX_TIME = 10000;
 	private ListNode<E> header=null;
 	private ListNode<E> end=null;
+	private TimeListener listener;
+	
+	public MyLinkedList() {
+		this.listener = new TimeListener();
+		this.listener.start();
+	}
+	
+	private synchronized Object[] getNodesArray() {
+		Object nodes[] = new Object[this.size()];
+		ListNode<E> current = this.header;
+
+		for(int i=0; i<nodes.length; i++) {
+			nodes[i] = current.copy();
+			current = current.next;
+		}
+		return nodes;
+	}
 	
 	@Override
 	public boolean add(E e) {
@@ -20,8 +38,11 @@ public class MyLinkedList<E> implements List<E> {
 
 	@Override
 	public void add(int index, E element) {
-		ListIterator<E> iter = this.listIterator(index);
-		iter.add(element);
+		if(index>=this.size() || index<0) throw new IndexOutOfBoundsException();
+		else {
+			ListIterator<E> iter = this.listIterator(index);
+			iter.add(element);
+		}
 	}
 
 	@Override
@@ -33,11 +54,14 @@ public class MyLinkedList<E> implements List<E> {
 
 	@Override
 	public boolean addAll(int index, Collection<? extends E> c) {
-		int b = index;
-		for(E elem : c){
-			this.add(b++,elem);
+		if(index>=this.size() || index<0) throw new IndexOutOfBoundsException();
+		else {
+			int b = index;
+			for(E elem : c){
+				this.add(b++,elem);
+			}
+			return true;
 		}
-		return true;
 	}
 
 	@Override
@@ -63,7 +87,10 @@ public class MyLinkedList<E> implements List<E> {
 
 	@Override
 	public E get(int index) {
-		return this.listIterator(index).next();
+		if(index>=this.size() || index<0) throw new IndexOutOfBoundsException();
+		else {
+			return this.listIterator(index).next();
+		}
 	}
 
 	@Override
@@ -108,12 +135,15 @@ public class MyLinkedList<E> implements List<E> {
 	}
 
 	@Override
-	public ListIterator<E> listIterator(int index) {
-		return new InnerIterator(index);
+	public synchronized ListIterator<E> listIterator(int index) {
+		if(index>=this.size() || index<0) throw new IndexOutOfBoundsException();
+		else {
+			return new InnerIterator(index);
+		}
 	}
 
 	@Override
-	public boolean remove(Object o) {
+	public synchronized boolean remove(Object o) {
 		for(Iterator<E> iter = this.iterator(); iter.hasNext();)
 			if(iter.next().equals(o)) {
 				iter.remove();
@@ -123,10 +153,14 @@ public class MyLinkedList<E> implements List<E> {
 	}
 
 	@Override
-	public E remove(int index) {
-		ListIterator<E> iter = this.listIterator(index);
-		E value = iter.next();
-		return value;
+	public synchronized E remove(int index) {
+		if(index>=this.size() && index<0) throw new IndexOutOfBoundsException();
+		else {
+			ListIterator<E> iter = this.listIterator(index);
+			E value = iter.next();
+			iter.remove();
+			return value;
+		}
 	}
 
 	@Override
@@ -154,10 +188,14 @@ public class MyLinkedList<E> implements List<E> {
 
 	@Override
 	public E set(int index, E element) {
-		ListIterator<E> iter = this.listIterator(index);
-		E value = iter.next();
-		iter.set(element);
-		return value;
+		if(index>=this.size() || index<0) throw new IndexOutOfBoundsException();
+		else {
+		
+			ListIterator<E> iter = this.listIterator(index);
+			E value = iter.next();
+			iter.set(element);
+			return value;
+		}
 	}
 
 	@Override
@@ -169,19 +207,21 @@ public class MyLinkedList<E> implements List<E> {
 
 	@Override
 	public List<E> subList(int fromIndex, int toIndex) {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 
 	@Override
 	public Object[] toArray() {
-		// TODO Auto-generated method stub
-		return null;
+		Object[] arr = new Object[this.size()];
+		int i = 0;
+		for(Iterator<E> iter = this.listIterator(); iter.hasNext();)
+			arr[i++]=iter.next();
+		return arr;
 	}
 
 	@Override
 	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -236,7 +276,6 @@ public class MyLinkedList<E> implements List<E> {
 				
 				elemToAdd.setPrevious(this.pointer);
 				elemToAdd.setNext(this.pointer.getNext());
-				//System.out.println(elemToAdd);
 				if(this.pointer.getNext()!=null)
 					this.pointer.getNext().setPrevious(elemToAdd);
 				else
@@ -310,14 +349,24 @@ public class MyLinkedList<E> implements List<E> {
 
 	}
 
-	private static class ListNode<E> {
+	private class ListNode<E> {
 
 		private ListNode<E> previous;
 		private ListNode<E> next;
 		private E value;
-
+		private Long timeCreated;
+		
 		public ListNode(E value) {
 			this.value = value;
+			this.timeCreated = System.currentTimeMillis();
+		}
+		
+		public ListNode<E> copy() {
+			ListNode<E> c = new ListNode<E>(value);
+			c.timeCreated = timeCreated;
+			c.next = next;
+			c.previous = previous;
+			return c;
 		}
 
 		public ListNode<E> getPrevious() {
@@ -336,6 +385,14 @@ public class MyLinkedList<E> implements List<E> {
 			this.next = next;
 		}
 
+		public Long getTime() {
+			return this.timeCreated;
+		}
+		
+		public boolean isOld() {
+			return (System.currentTimeMillis()-this.timeCreated)>MyLinkedList.this.MAX_TIME;
+		}
+		
 		public E getValue() {
 			return value;
 		}
@@ -355,6 +412,45 @@ public class MyLinkedList<E> implements List<E> {
 		}
 	}
 	
+	
+	private class TimeListener extends Thread {
+		private boolean toStop=false;
+		
+		public void stopThread() {
+			this.toStop = true;
+		}
+		
+		@Override 
+		public void run() {
+			while(!toStop) {
+
+				Object[] nodes = MyLinkedList.this.getNodesArray();
+
+				for(int i = 0, j=0; i<nodes.length && i<MyLinkedList.this.size();i++, j++ )
+					if(((ListNode<E>)nodes[i]).isOld()){
+						MyLinkedList.this.remove((int)j--);
+					} 
+			}
+		}
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		this.listener.stopThread();
+	};
+
+	@Override
+	public boolean equals(Object o) {
+		if(o instanceof MyLinkedList) {
+			if(((MyLinkedList)o).size()==this.size()) {
+				for(int i=0; i<this.size(); i++)
+					if(!((MyLinkedList)o).get((int)i).equals(this.get(i)))
+						return false;
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	@Override 
 	public String toString() {

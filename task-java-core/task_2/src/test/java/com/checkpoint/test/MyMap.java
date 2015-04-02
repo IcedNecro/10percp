@@ -29,7 +29,6 @@ public class MyMap<K,V> implements Map<K, V> {
 					for(Entry<K,V> e:MyMap.this.entrySet()) {
 						MyEntry<K,V> entry = (MyEntry<K, V>)e;
 						if(entry.isOld(expirationTime)) {
-							System.out.println("removing as old "+ entry.getKey());
 							MyMap.this.remove(entry.getKey());
 						}
 					}
