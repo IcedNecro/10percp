@@ -41,6 +41,10 @@ public class MobileNetwork {
 		this.name = name;
 	}
 	
+	/**
+	 * Sets an default id of package that is given to all subscribers that subscribed current network recently
+	 * @param i - id of package
+	 */
 	public void setBasicPackageID(Integer i) {
 		this.basicPackageID = i;
 	}
@@ -73,7 +77,17 @@ public class MobileNetwork {
 	}
 	
 	/**
-	 * adds subscriber to the network and gives him basic package
+	 * Sends package change notification to the subscribers
+	 * @param subs - subscriber
+	 * @param id - id of package
+	 */
+	public void performPackageChange(Subscriber subs, Integer id){
+		subs.receiveNotification(new ChangePackageNotification(this,subs,subs+" - You have changed your package to "
+				+this.packagePrototypes.get(id),this.packagePrototypes.get(id).clone()));
+	}
+	
+	/**
+	 * adds subscriber to the network and gives him default package
 	 * @param s
 	 */
 	public void addSubscriber(Subscriber s) {
@@ -101,7 +115,6 @@ public class MobileNetwork {
 		final Subscriber subs = r.getConsumer();
 		final CallRequest request =r;
 		
-		System.out.println(this.mobileTowers);
 		// is consumer in range of towers
 		for(MobileTower tower: mobileTowers) {
 			if(tower.isInRange(subs)){

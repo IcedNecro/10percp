@@ -18,6 +18,7 @@ import com.checkpoint.mobilenetwork.core.Subscriber;
 import com.checkpoint.mobilenetwork.core.packages.LowCostPackage;
 import com.checkpoint.mobilenetwork.core.packages.Package.MobileNetworkNotSupported;
 import com.checkpoint.mobilenetwork.core.packages.Package;
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 
@@ -28,21 +29,21 @@ public class TestNotification {
 		System.out.println("Test 1: mock test");
 		
 		MobileTower tower = mock(MobileTower.class);
-		final Subscriber subs_1 = new Subscriber("09700000001");
+		final Subscriber real = new Subscriber("09700000001");
 		final Subscriber subs_2 = new Subscriber("09700000002");
 
+		final Subscriber subs_1 = spy(real);
 		doAnswer(new Answer<Object>() {
 
 			@Override
 			public Object answer(InvocationOnMock invocation)
 					throws Throwable {
-				
 				subs_1.receiveNotification(new SMS(subs_1, subs_2, "LOL"));
 				subs_2.receiveNotification(new SMS(subs_2, subs_1, "LOL2"));
 				return null;
 			}
 			
-		}).when(tower).sendNotification(any(Notification.class));;
+		}).when(subs_1).sendSMS(any(Subscriber.class), anyString(), any(List.class));
 		when(tower.isInRange(any(Subscriber.class))).thenReturn(true);
 		
 		subs_1.sendSMS(subs_2, "testMessage", Arrays.asList(tower));
@@ -244,7 +245,6 @@ public class TestNotification {
 		
 		subs_1.transferMoneyTo(subs_2, 10.f, Arrays.asList(tower));		
 		Thread.sleep(1000);
-		System.out.println(subs_1.getMoneyOnCount());
 		assertEquals(30f,subs_2.getMoneyOnCount(), 0.001f);
 		assertEquals(9.8f,subs_1.getMoneyOnCount(), 0.001f);
 	}

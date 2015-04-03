@@ -69,6 +69,18 @@ public class MobileTower {
 		this.service.submit(new OperateThread(future));
 	}
 	
+	/**
+	 * resends subscribers request for package change to subscribers network
+	 * @param subs - subcriber
+	 * @param id - id of package
+	 */
+	public void sendRequestForPackageChange(Subscriber subs, Integer id){
+		for(MobileNetwork network:this.sharedNetworks())
+			if(network.equals(subs.getOperator())){
+				network.performPackageChange(subs, id);
+				return;
+			}
+	}
 	
 	/**
 	 * Sends request for call to the Network
@@ -79,7 +91,6 @@ public class MobileTower {
 	public void sendRequest(CallRequest request) throws InterruptedException, ExecutionException {
 
 		for(MobileNetwork network : this.belongsTo) {
-			System.out.println(network+" "+request.getConsumer().getOperator());
 				
 			if(network.equals(request.getConsumer().getOperator())){
 				

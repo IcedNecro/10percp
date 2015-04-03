@@ -51,6 +51,24 @@ public class Subscriber {
 	}
 	
 	/**
+	 * Sends request to change package of you mobile network. Each package has id at Mobile Network
+	 * Subscriber sends an id of package that it want to get
+	 * @param id - id of package 
+	 * @param mobiTowers
+	 */
+	public void changePackage(Integer id, List<MobileTower> mobiTowers) {
+
+		for(MobileTower tower : mobiTowers) {
+			if(tower.isInRange(this) && tower.sharedNetworks().contains(this.getOperator())) {
+				tower.sendRequestForPackageChange(this,id);
+				return;
+			}			
+		}
+		logger.log(Level.INFO, this.phoneNumber+" - You are offline, or the nearest mobile towers don't supports your operator");
+
+	}
+	
+	/**
 	 * Sends call request to another subscriber to the nearest tower
 	 * @param subscriber
 	 * @param mobiTowers - list of towers
