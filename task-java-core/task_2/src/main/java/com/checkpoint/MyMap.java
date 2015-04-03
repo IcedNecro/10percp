@@ -1,4 +1,4 @@
-package com.checkpoint.test;
+package com.checkpoint;
 
 import java.util.Date;
 import java.util.Collection;

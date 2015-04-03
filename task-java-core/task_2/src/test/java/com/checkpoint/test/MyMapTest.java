@@ -1,4 +1,4 @@
-package com.checkpoint;
+package com.checkpoint.test;
 
 import static org.junit.Assert.*;
 
@@ -14,7 +14,7 @@ import static org.mockito.Mockito.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.checkpoint.test.MyMap;
+import com.checkpoint.MyMap;
 
 public class MyMapTest {
 	private MyMap<String, Integer> emptyMap;

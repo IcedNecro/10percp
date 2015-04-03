@@ -1,4 +1,4 @@
-package com.checkpoint;
+package com.checkpoint.test;
 
 import static org.junit.Assert.*;
 
@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.checkpoint.test.MyLinkedList;
+import com.checkpoint.MyLinkedList;
 
 
 public class LinkedListTest {
