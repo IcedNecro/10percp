@@ -1,5 +1,6 @@
 package com.checkpoint;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -237,9 +238,9 @@ public class MyArrayList<E> implements List<E>{
 	public List<E> subList(int fromIndex, int toIndex) {
 		if(toIndex>=this.size() || fromIndex<0) throw new IndexOutOfBoundsException();
 		
-		Object[] sublist = new Object[toIndex-fromIndex];
+		ArrayList<E> sublist = new ArrayList<E>();
 		for(int i=fromIndex; i<toIndex; i++)
-			sublist[i] = this.buffer[i][0];
+			sublist.add((E)this.buffer[i][0]);
 		return null;
 	}
 
